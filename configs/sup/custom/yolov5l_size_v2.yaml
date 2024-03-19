@@ -3,7 +3,7 @@
 # Parameters
 project: '../runs_yolov5'
 adam: False
-epochs: 25
+epochs: 10
 weights: '../runs_yolov5/exp72/weights/best.pt'
 freeze_layer_num: 10
 prune_finetune: False
