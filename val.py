@@ -430,9 +430,7 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        label_names, labels, lines = stats_holder.read_dataset(data_path)
-        print("dataset count=", len(labels), ",dataset_labels:", label_names)
-        stats_holder.stats_matrix(confusion_matrix.matrix, list(model.names.values()), label_names, len(labels))
+
 
         callbacks.run('on_val_end')
 
@@ -462,6 +460,10 @@ def run(data,
             map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
+
+        label_names, labels, lines = stats_holder.read_dataset(data_path)
+        print("dataset count=", len(labels), ",dataset_labels:", label_names)
+        stats_holder.stats_matrix(confusion_matrix.matrix, list(model.names.values()), label_names, len(labels))
         stats_holder.stats_json(os.path.join(save_dir, "best_predictions.json"),
                                 labels, lines, label_names, list(model.names.values()))
     # Return results
