@@ -73,13 +73,11 @@ def cal_diff(label, predict):
     return abs(diff), 1 - diff / int(label)
 
 
-def read_dataset(data):
+def read_dataset(dataset):
     #
-    from utils.general import yaml_load
     img_files = []
-    dataset = yaml_load(data)
     label_names = dataset['names']
-    val_path = os.path.join(dataset['path'], dataset['val'])
+    val_path = dataset['val']
     with open(val_path, encoding='utf-8') as file:
         img_files += file.readlines()
     # load test data
@@ -90,7 +88,7 @@ def read_dataset(data):
         with open(label_file, encoding='utf-8') as file:
             labels += file.readlines()
     labels = [int(label.split(" ")[0]) for label in labels]
-    print(f"load {len(img_files)} data from {data},labels={len(labels)},names={label_names}")
+    print(f"load {len(img_files)} data from {val_path},labels={len(labels)},names={label_names}")
     return label_names, labels, img_files
 
 

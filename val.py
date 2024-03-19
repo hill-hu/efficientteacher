@@ -405,7 +405,10 @@ def run(data,
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        p, r, ap, f1, ap_class, cls_thr =stats_holder. ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+        ap_fun = ap_per_class
+        if val_cfg and val_cfg.Loss.cross_weight > 0:
+            ap_fun = stats_holder.ap_per_class
+        p, r, ap, f1, ap_class, cls_thr = ap_fun(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
@@ -430,7 +433,6 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-
 
         callbacks.run('on_val_end')
 
@@ -461,10 +463,10 @@ def run(data,
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
 
-        label_names, labels, lines = stats_holder.read_dataset(data_path)
+        label_names, labels, lines = stats_holder.read_dataset(data)
         print("dataset count=", len(labels), ",dataset_labels:", label_names)
         stats_holder.stats_matrix(confusion_matrix.matrix, list(model.names.values()), label_names, len(labels))
-        stats_holder.stats_json(os.path.join(save_dir, "best_predictions.json"),
+        stats_holder.stats_json(pred_json,
                                 labels, lines, label_names, list(model.names.values()))
     # Return results
     model.float()  # for training

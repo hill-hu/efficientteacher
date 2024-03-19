@@ -40,13 +40,13 @@ Loss:
   cls: 0.1
   obj: 0.9
   anchor_t: 4.0
-  cross_weight: 0.9
+  cross_weight: 0.
 
 Dataset:
   data_name: 'coco'
-  train: ../dataset/with_label/train.txt  # 118287 images
-  val: ../dataset/with_label/val.txt  # 5000 images
-  test: ../dataset/with_label/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
+  train: ../dataset/whu_1mm/train.txt  # 118287 images
+  val: ../dataset/whu_1mm/val.txt  # 5000 images
+  test: ../dataset/whu_1mm/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
   nc: 10  # number of classes
   np: 0 #number of keypoints
   names: ['2', '3', '4', '5', '6', '7', '8', '10', '15', '17']
