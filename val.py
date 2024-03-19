@@ -462,8 +462,8 @@ def run(data,
             map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
-    stats_holder.stats_json(os.path.join(save_dir, "best_predictions.json"),
-                            labels, lines, label_names, list(model.names.values()))
+        stats_holder.stats_json(os.path.join(save_dir, "best_predictions.json"),
+                                labels, lines, label_names, list(model.names.values()))
     # Return results
     model.float()  # for training
     if not training:
