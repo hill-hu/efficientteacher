@@ -40,7 +40,7 @@ Loss:
   cls: 0.1
   obj: 0.9
   anchor_t: 4.0
-  cross_weight: 0.
+  cross_weight: 0.5
 
 Dataset:
   data_name: 'coco'
