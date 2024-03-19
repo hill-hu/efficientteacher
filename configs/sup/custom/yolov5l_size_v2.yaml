@@ -45,7 +45,7 @@ Loss:
 Dataset:
   data_name: 'coco'
   train: ../dataset/rhwu_v3/train.txt  # 118287 images
-  val: ../dataset/rhwu_v3/all.txt  # 5000 images
+  val: ../dataset/rhwu_v3/val.txt  # 5000 images
   test: ../dataset/rhwu_v3/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
   nc: 10  # number of classes
   np: 0 #number of keypoints
