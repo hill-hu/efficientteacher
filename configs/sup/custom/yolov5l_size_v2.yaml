@@ -4,7 +4,8 @@
 project: '../runs_yolov5'
 adam: False
 epochs: 50
-weights: '../runs_yolov5/exp15/weights/best.pt'
+weights: '../runs_yolov5/exp58/weights/best.pt'
+freeze_layer_num: 0.0
 prune_finetune: False
 linear_lr: True
 hyp:
@@ -15,6 +16,7 @@ hyp:
   lrf: 0.1
   scale: 0.9
   no_aug_epochs: 0
+  mosaic: 1.0
   mixup: 0.1
   warmup_epochs: 3
 
@@ -47,6 +49,6 @@ Dataset:
   test: ../dataset/rhwu/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
   nc: 10  # number of classes
   np: 0 #number of keypoints
-  names: ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
+  names: ['2', '3', '4', '5', '6', '7', '8', '10', '15', '17']
   img_size: 640
   batch_size: 64

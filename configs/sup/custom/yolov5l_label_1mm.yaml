@@ -16,6 +16,7 @@ hyp:
   lrf: 0.1
   scale: 0.9
   no_aug_epochs: 999
+  mosaic: 1.0
   mixup: 0.1
   warmup_epochs: 3
 
@@ -39,6 +40,7 @@ Loss:
   cls: 0.1
   obj: 0.9
   anchor_t: 4.0
+  cross_weight: 0.9
 
 Dataset:
   data_name: 'coco'
