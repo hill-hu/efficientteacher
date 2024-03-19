@@ -1,7 +1,7 @@
 import json
 import os
 
-from ultralytics import utils
+
 
 from angel.utils import read_img_file, save_img_file
 import numpy as np
@@ -75,8 +75,9 @@ def cal_diff(label, predict):
 
 def read_dataset(data):
     #
+    from utils.general import yaml_load
     img_files = []
-    dataset = utils.yaml_load(data)
+    dataset = yaml_load(data)
     label_names = dataset['names']
     val_path = os.path.join(dataset['path'], dataset['val'])
     with open(val_path, encoding='utf-8') as file:
