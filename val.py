@@ -406,7 +406,7 @@ def run(data,
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         ap_fun = ap_per_class
-        if val_cfg and val_cfg.Loss.cross_weight > 0:
+        if (compute_loss and compute_loss.cross_weight > 0) or (cfg and val_cfg.Loss.cross_weight > 0):
             ap_fun = stats_holder.ap_per_class
         p, r, ap, f1, ap_class, cls_thr = ap_fun(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95

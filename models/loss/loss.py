@@ -94,6 +94,7 @@ class ComputeLoss:
     # Compute losses
     def __init__(self, model, cfg):
         self.sort_obj_iou = False
+        self.cross_weight = 0.0
         device = next(model.parameters()).device  # get model device
         # h = model.hyp  # hyperparameters
         autobalance = cfg.Loss.autobalance
@@ -117,6 +118,7 @@ class ComputeLoss:
         cross_weight = cfg.Loss.cross_weight
         if cross_weight > 0:
             print("use CrossClsLoss :cross_weight=", cross_weight)
+            self.cross_weight = cross_weight
             BCEcls, BCEobj = CrossClsLoss(BCEcls, cross_weight), CrossClsLoss(BCEobj, cross_weight)
 
         det = model.module.head if is_parallel(model) else model.head # Detect() module
