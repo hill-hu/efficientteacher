@@ -4,7 +4,7 @@
 project: '../runs_yolov5'
 adam: False
 epochs: 25
-weights: '../runs_yolov5/exp58/weights/best.pt'
+weights: '../runs_yolov5/exp72/weights/best.pt'
 freeze_layer_num: 10
 prune_finetune: False
 linear_lr: True
@@ -16,7 +16,7 @@ hyp:
   lrf: 0.1
   scale: 0.9
   no_aug_epochs: 0
-  mosaic: 1.0
+  mosaic: 0.5
   mixup: 0.1
   warmup_epochs: 3
 
@@ -40,7 +40,7 @@ Loss:
   cls: 0.1
   obj: 0.9
   anchor_t: 4.0
-  cross_weight: 0.
+  cross_weight: 0.5
 
 Dataset:
   data_name: 'coco'
