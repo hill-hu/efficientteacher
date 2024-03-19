@@ -5,7 +5,7 @@ project: '../runs_yolov5'
 adam: False
 epochs: 50
 weights: '../runs_yolov5/exp58/weights/best.pt'
-freeze_layer_num: 0.0
+freeze_layer_num: 0
 prune_finetune: False
 linear_lr: True
 hyp:
