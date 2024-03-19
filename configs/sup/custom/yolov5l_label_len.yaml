@@ -1,10 +1,11 @@
 # EfficientTeacher by Alibaba Cloud 
 
 # Parameters
-project: '/runs_yolov5'
+project: '../runs_yolov5'
 adam: False
-epochs: 80
-weights: ''
+epochs: 50
+weights: '../runs_yolov5/exp15/weights/best.pt'
+freeze_layer_num: 10
 prune_finetune: False
 linear_lr: True
 hyp:
@@ -14,9 +15,9 @@ hyp:
   hsv_v: 0.4
   lrf: 0.1
   scale: 0.9
-  no_aug_epochs: 0
-  mixup: 0.1
-  warmup_epochs: 3
+  no_aug_epochs: 999
+  mixup: 0.0
+  warmup_epochs: 0
 
 Model:
   depth_multiple: 1.00  # model depth multiple
@@ -35,17 +36,17 @@ Model:
   anchors: [[10,13, 16,30, 33,23],[30,61, 62,45, 59,119],[116,90, 156,198, 373,326]]  # P5/32]
 Loss:
   type: 'ComputeLoss'
-  cls: 0.3
-  obj: 0.7
+  cls: 0.1
+  obj: 0.9
   anchor_t: 4.0
 
 Dataset:
   data_name: 'coco'
-  train: ../dataset/with_label/train.txt  # 118287 images
-  val: ../dataset/with_label/val.txt  # 5000 images
-  test: ../dataset/with_label/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
+  train: ../dataset/ployp_len/train.txt  # 118287 images
+  val: ../dataset/ployp_len/val.txt  # 5000 images
+  test: ../dataset/ployp_len/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
   nc: 10  # number of classes
   np: 0 #number of keypoints
-  names: ['2', '3', '4', '5', '6', '7', '8', '10', '15', '17']
+  names: ['60', '120', '180', '240', '300', '360', '420', '480', '540', '600']
   img_size: 640
   batch_size: 64

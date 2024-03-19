@@ -41,11 +41,11 @@ Loss:
 
 Dataset:
   data_name: 'coco'
-  train: ../dataset/with_label/train.txt  # 118287 images
-  val: ../dataset/with_label/val.txt  # 5000 images
-  test: ../dataset/with_label/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
-  nc: 10  # number of classes
+  train: ../dataset/polyp_yolov5/train.txt  # 118287 images
+  val: ../dataset/polyp_yolov5/val.txt  # 5000 images
+  test: ../dataset/polyp_yolov5/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
+  nc: 1  # number of classes
   np: 0 #number of keypoints
-  names: ['2', '3', '4', '5', '6', '7', '8', '10', '15', '17']
+  names: ['polyp']
   img_size: 640
   batch_size: 64

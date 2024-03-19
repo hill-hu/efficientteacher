@@ -105,6 +105,7 @@ class ComputeLoss:
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([cls_pw], device=device))
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([obj_pw], device=device))
 
+
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
         self.cp, self.cn = smooth_BCE(eps=label_smoothing)  # positive, negative BCE targets
 
@@ -112,6 +113,11 @@ class ComputeLoss:
         g = cfg.Loss.fl_gamma  # focal loss gamma
         if g > 0:
             BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
+
+        cross_weight = cfg.Loss.cross_weight
+        if cross_weight > 0:
+            print("use CrossClsLoss :cross_weight=", cross_weight)
+            BCEcls, BCEobj = CrossClsLoss(BCEcls, cross_weight), CrossClsLoss(BCEobj, cross_weight)
 
         det = model.module.head if is_parallel(model) else model.head # Detect() module
         self.balance = {3: [4.0, 1.0, 0.4]}.get(det.nl, [4.0, 1.0, 0.25, 0.06, .02])  # P3-P7
@@ -182,7 +188,7 @@ class ComputeLoss:
                 if self.nc > 1:  # cls loss (only if multiple classes)
                     t = torch.full_like(ps[:, 5:], self.cn, device=device)  # targets
                     t[range(n), tcls[i]] = self.cp
-                    lcls += self.BCEcls(ps[:, 5:], t)  # BCE
+                    lcls += self.BCEcls(ps[:, 5:], t)
 
                 # Append targets to text file
                 # with open('targets.txt', 'a') as file:
@@ -937,3 +943,30 @@ class ComputeKeyPointsLoss:
 
         loss_dict = dict(iou_loss=iou_loss, obj_loss=obj_loss, cls_loss=cls_loss, n_fg=num_fg, lmk_n_fg=lmk_num_fg, kp_loss=kp_loss, kp_obj=kp_obj_loss, loss=loss)
         return loss, loss_dict
+
+
+class CrossClsLoss(nn.Module):
+    # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    def __init__(self, loss_fcn, cross_weight=0.9):
+        super(CrossClsLoss, self).__init__()
+        self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
+        self.cross_weight = cross_weight
+        self.reduction = loss_fcn.reduction
+        self.loss_fcn.reduction = 'none'  # required to apply FL to each element
+
+    def forward(self, pred, true):
+        loss = self.loss_fcn(pred, true)
+
+        input_cls = torch.argmax(pred)
+        target_cls = torch.argmax(true)
+
+        if input_cls != target_cls:
+            if abs(input_cls - target_cls) == 1:
+                loss *= self.cross_weight
+
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:  # 'none'
+            return loss

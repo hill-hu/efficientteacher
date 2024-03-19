@@ -145,6 +145,7 @@ _C.Loss.anchor_t = 4.0 #标准yolov5计算正样本的阈值
 _C.Loss.kp_loss_weight = 10.0  #关键点检测部分loss的权重
 _C.Loss.static_assigner_epoch = 5
 _C.Loss.single_targets=False #设置为True时 不使用multi positive采样
+_C.Loss.cross_weight=0.0
 
 #nanodet使用的loss参数
 _C.Loss.qfl_use_sigmoid=True 

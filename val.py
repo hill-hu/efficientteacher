@@ -30,6 +30,7 @@ import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
+import stats_holder
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -42,7 +43,7 @@ from utils.datasets import create_dataloader
 from utils.metrics import ap_per_class, ConfusionMatrix, oks_iou
 from utils.general import coco80_to_coco91_class, check_dataset, check_img_size, check_requirements, \
     check_suffix, check_yaml, box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, \
-    increment_path, colorstr, print_args, non_max_suppression_lmk_and_bbox, scale_coords_landmarks
+    increment_path, colorstr, print_args, non_max_suppression_lmk_and_bbox, scale_coords_landmarks, yaml_load
 from utils.plots import plot_images
 from utils.torch_utils import select_device, time_sync
 from utils.callbacks import Callbacks
@@ -53,6 +54,7 @@ from configs.defaults import get_cfg
 
 from utils.metrics import NMEMeter
 from utils.detect_multi_backend import DetectMultiBackend
+
 
 def save_one_txt(predn, save_conf, shape, file):
     # Save one txt result
@@ -76,7 +78,6 @@ def save_one_json(predn, jdict, path, class_map):
                       'score': round(p[4], 5)})
 
 
-
 def process_batch_oks(detections, labels, iouv, num_points):
     correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     correct_class = labels[:, 0:1] == detections[:, 5]
@@ -94,6 +95,7 @@ def process_batch_oks(detections, labels, iouv, num_points):
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
     return correct
+
 
 def process_batch_old(detections, labels, iouv):
     """
@@ -119,6 +121,7 @@ def process_batch_old(detections, labels, iouv):
         matches = torch.Tensor(matches).to(iouv.device)
         correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
     return correct
+
 
 def process_batch(detections, labels, iouv):
     """
@@ -172,17 +175,18 @@ def run(data,
         callbacks=Callbacks(),
         compute_loss=None,
         model_post=None,
-        eval_num = -1,
-        cfg = None,
-        val_ssod = False,
-        num_points = 0,
-        val_kp = False,
-        val_dp1000 = False,
+        eval_num=-1,
+        cfg=None,
+        val_ssod=False,
+        num_points=0,
+        val_kp=False,
+        val_dp1000=False,
         dnn=False,  # use OpenCV DNN for ONNX inference
-        names = {}
+        names={}
         ):
     # Initialize/load model and set device
     training = model is not None
+    data_path = data
     if training:  # called by train.py
         device = next(model.parameters()).device  # get model device
         pt, jit, engine = True, False, False
@@ -229,13 +233,13 @@ def run(data,
         # Data
         if val_ssod:
             pass
-        elif pt: #only pt we print FLOPs and PARAMS
+        elif pt:  # only pt we print FLOPs and PARAMS
             model_profile = copy.deepcopy(model)
-            flops, params =  profile(model_profile.module if is_parallel(model_profile) else model_profile, (torch.ones((1, 3, imgsz, imgsz)).to(device),1), clever=True)
+            flops, params = profile(model_profile.module if is_parallel(model_profile) else model_profile,
+                                    (torch.ones((1, 3, imgsz, imgsz)).to(device), 1), clever=True)
             print("Flops {} Params {}".format(flops, params))
         else:
             pass
-
 
     # Configure
     model.eval()
@@ -274,17 +278,17 @@ def run(data,
 
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         # 默认-1 则全部测试
-        if batch_i==eval_num:
+        if batch_i == eval_num:
             break
         t1 = time_sync()
         img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         if pt:
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        elif is_magicmind: #for cambricon no need to divide 255.0 
+        elif is_magicmind:  # for cambricon no need to divide 255.0
             pass
         else:
-            img /= 255.0   
+            img /= 255.0
         targets = targets.to(device)
         nb, _, height, width = img.shape  # batch size, channels, height, width
         t2 = time_sync()
@@ -292,7 +296,7 @@ def run(data,
 
         # Run model
         if val_ssod:
-            outputs, sup_feats = model(img, augment=augment) 
+            outputs, sup_feats = model(img, augment=augment)
         else:
             outputs = model(img, augment=augment)  # inference and training outputs
         if model_post is not None:
@@ -303,7 +307,7 @@ def run(data,
                 outputs = model_post.post_process(outputs)
         dt[1] += time_sync() - t2
 
-        #ugly solution suit for different output format
+        # ugly solution suit for different output format
         if outputs is not list:
             out = outputs
             if type(outputs) is tuple:
@@ -313,24 +317,26 @@ def run(data,
         else:
             if len(outputs) >= 2:
                 out, train_out = outputs[:2]
-            # Compute loss
+                # Compute loss
                 if compute_loss:
                     loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
             else:
                 out = outputs[0]
         # Run NMS
         # if num_points == 4:
-            # targets[:, 2:] *= torch.Tensor([width, height, width, height, width, height, width, height, width, height, width, height]).to(device)  # to pixels
+        # targets[:, 2:] *= torch.Tensor([width, height, width, height, width, height, width, height, width, height, width, height]).to(device)  # to pixels
         # if num_points == 8:
         if val_kp:
-            targets[:, 2:2+2*(2 + num_points)] *= torch.Tensor([width, height] * (2 + num_points)).to(device)  # to pixels
+            targets[:, 2:2 + 2 * (2 + num_points)] *= torch.Tensor([width, height] * (2 + num_points)).to(
+                device)  # to pixels
         else:
             targets[:, 2:6] *= torch.Tensor([width, height] * 2).to(device)  # to pixels
         # targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:6] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t3 = time_sync()
         if num_points > 0:
-            out = non_max_suppression_lmk_and_bbox(out, conf_thres, iou_thres, labels=lb, agnostic=single_cls, num_points=num_points)
+            out = non_max_suppression_lmk_and_bbox(out, conf_thres, iou_thres, labels=lb, agnostic=single_cls,
+                                                   num_points=num_points)
         else:
             out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
         dt[2] += time_sync() - t3
@@ -355,15 +361,17 @@ def run(data,
             predn = pred.clone()
             scale_coords(img[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
             if num_points > 0:
-                scale_coords_landmarks(img[si].shape[1:], predn[:, -1 - num_points * 2:-1], shape, num_points, shapes[si][1])
+                scale_coords_landmarks(img[si].shape[1:], predn[:, -1 - num_points * 2:-1], shape, num_points,
+                                       shapes[si][1])
 
             # Evaluate
             if nl:
                 if num_points > 0 and val_kp:
-                    scale_coords_landmarks(img[si].shape[1:], labels[:, 5:5+num_points * 2], shape, num_points, shapes[si][1])
+                    scale_coords_landmarks(img[si].shape[1:], labels[:, 5:5 + num_points * 2], shape, num_points,
+                                           shapes[si][1])
                     correct = process_batch_oks(predn, labels, iouv, num_points)
                 else:
-                    #虽然检测出了关键点，但是val_kp置0，所以只验bbox
+                    # 虽然检测出了关键点，但是val_kp置0，所以只验bbox
                     tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                     scale_coords(img[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                     labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
@@ -390,14 +398,14 @@ def run(data,
             else:
                 Thread(target=plot_images, args=(img, targets, paths, f, 0, names), daemon=True).start()
             # Thread(target=plot_images_keypoints, args=(img, targets, paths, f, names), daemon=True).start()
-            # f = save_dir / f'val_batch{batch_i}_pred.jpg'  # predictions
+            f = save_dir / f'val_batch{batch_i}_pred.jpg'  # predictions
             # Thread(target=plot_images, args=(img, output_to_target_keypoints(out), paths, f, names), daemon=True).start()
-            # Thread(target=plot_images, args=(img, out, paths, f, names), daemon=True).start()
+            # Thread(target=plot_images, args=(img, out, paths, f, 0,names), daemon=True).start()
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        p, r, ap, f1, ap_class, cls_thr = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+        p, r, ap, f1, ap_class, cls_thr =stats_holder. ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
@@ -422,6 +430,10 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
+        label_names, labels, lines = stats_holder.read_dataset(data_path)
+        print("dataset count=", len(labels), ",dataset_labels:", label_names)
+        stats_holder.stats_matrix(confusion_matrix.matrix, list(model.names.values()), label_names, len(labels))
+
         callbacks.run('on_val_end')
 
     # Save JSON
@@ -450,7 +462,8 @@ def run(data,
             map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
-
+    stats_holder.stats_json(os.path.join(save_dir, "best_predictions.json"),
+                            labels, lines, label_names, list(model.names.values()))
     # Return results
     model.float()  # for training
     if not training:
@@ -486,10 +499,10 @@ def parse_opt():
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    parser.add_argument('--val-ssod',  action='store_true', help='trigger when val semi-supervised') 
-    parser.add_argument('--num-points',  type=int, default=0, help='num of keypoints') 
-    parser.add_argument('--cfg', type=str, default='', help='The config file used for validation') 
-    parser.add_argument('--val-dp1000',  action='store_true', help='trigger when val dp1000 model') 
+    parser.add_argument('--val-ssod', action='store_true', help='trigger when val semi-supervised')
+    parser.add_argument('--num-points', type=int, default=0, help='num of keypoints')
+    parser.add_argument('--cfg', type=str, default='', help='The config file used for validation')
+    parser.add_argument('--val-dp1000', action='store_true', help='trigger when val dp1000 model')
     opt = parser.parse_args()
     if opt.cfg == '':
         opt.data = check_yaml(opt.data)  # check YAML
