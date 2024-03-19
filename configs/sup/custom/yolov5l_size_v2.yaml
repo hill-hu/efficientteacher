@@ -5,7 +5,7 @@ project: '../runs_yolov5'
 adam: False
 epochs: 25
 weights: '../runs_yolov5/exp58/weights/best.pt'
-freeze_layer_num: 0
+freeze_layer_num: 10
 prune_finetune: False
 linear_lr: True
 hyp:
@@ -37,10 +37,10 @@ Model:
   anchors: [[10,13, 16,30, 33,23],[30,61, 62,45, 59,119],[116,90, 156,198, 373,326]]  # P5/32]
 Loss:
   type: 'ComputeLoss'
-  cls: 0.3
-  obj: 0.7
+  cls: 0.1
+  obj: 0.9
   anchor_t: 4.0
-  cross_weight: 0.9
+  cross_weight: 0.5
 
 Dataset:
   data_name: 'coco'
