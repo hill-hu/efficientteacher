@@ -42,7 +42,7 @@ Loss:
   anchor_t: 4.0
   cross_weight: 0.
   autobalance: True
-  label_smoothing: 0.0
+  label_smoothing: 0.1
 
 Dataset:
   data_name: 'coco'
