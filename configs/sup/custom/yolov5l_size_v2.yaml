@@ -3,9 +3,9 @@
 # Parameters
 project: '../runs_yolov5'
 adam: False
-epochs: 10
+epochs: 20
 weights: '../runs_yolov5/exp58/weights/best.pt'
-freeze_layer_num: 10
+freeze_layer_num: 0
 prune_finetune: False
 linear_lr: True
 hyp:
@@ -16,7 +16,7 @@ hyp:
   lrf: 0.1
   scale: 0.9
   no_aug_epochs: 0
-  mosaic: 0.5
+  mosaic: 1.
   mixup: 0.1
   warmup_epochs: 3
 
@@ -44,7 +44,7 @@ Loss:
 
 Dataset:
   data_name: 'coco'
-  train: ../dataset/rhwu_v4/train.txt  # 118287 images
+  train: ../dataset/rhwu_v4/train_full.txt  # 118287 images
   val: ../dataset/rhwu_v4/test.txt  # 5000 images
   test: ../dataset/rhwu_v4/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
   nc: 10  # number of classes
