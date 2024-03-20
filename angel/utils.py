@@ -51,3 +51,14 @@ def fetch_all_files(from_dir, followlinks=True, file_exts=None, exclude_file_ext
 
     print("fetch_all_files count=%s" % len(all_files))
     return all_files
+
+
+def decode_coco(size, box):
+    x, y, w, h = float(box[0]), float(box[1]), float(box[2]), float(box[3])
+    dw = w * size[0]
+    dh = h * size[1]
+    x = (x - w / 2) * size[0]
+    y = (y - h / 2) * size[1]
+    return int(x), int(y), int(dw), int(dh)
+
+

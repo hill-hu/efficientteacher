@@ -182,7 +182,8 @@ def run(data,
         val_kp=False,
         val_dp1000=False,
         dnn=False,  # use OpenCV DNN for ONNX inference
-        names={}
+        names={},
+        max_det=1,
         ):
     # Initialize/load model and set device
     training = model is not None
@@ -259,7 +260,7 @@ def run(data,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
-    confusion_matrix = ConfusionMatrix(nc=nc)
+    confusion_matrix = ConfusionMatrix(nc=nc, iou_thres=iou_thres, conf=conf_thres)
     try:
         names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     except:
@@ -336,9 +337,10 @@ def run(data,
         t3 = time_sync()
         if num_points > 0:
             out = non_max_suppression_lmk_and_bbox(out, conf_thres, iou_thres, labels=lb, agnostic=single_cls,
-                                                   num_points=num_points)
+                                                   num_points=num_points,max_det=max_det)
         else:
-            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
+            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True,
+                                      agnostic=single_cls,max_det=max_det)
         dt[2] += time_sync() - t3
         # print(time_sync() - t3)
 
@@ -432,7 +434,8 @@ def run(data,
 
     # Plots
     if plots:
-        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
+        for normalize in True, False:
+            confusion_matrix.plot(save_dir=save_dir, names=list(names.values()), normalize=normalize)
 
         callbacks.run('on_val_end')
 
@@ -507,6 +510,7 @@ def parse_opt():
     parser.add_argument('--num-points', type=int, default=0, help='num of keypoints')
     parser.add_argument('--cfg', type=str, default='', help='The config file used for validation')
     parser.add_argument('--val-dp1000', action='store_true', help='trigger when val dp1000 model')
+    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     opt = parser.parse_args()
     if opt.cfg == '':
         opt.data = check_yaml(opt.data)  # check YAML

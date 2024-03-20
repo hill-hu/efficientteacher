@@ -1,9 +1,8 @@
 import json
 import os
 
-
-
-from angel.utils import read_img_file, save_img_file
+import utils.general
+from angel.utils import read_img_file, save_img_file, decode_coco
 import numpy as np
 from pathlib import Path
 
@@ -78,6 +77,8 @@ def read_dataset(dataset):
     img_files = []
     label_names = dataset['names']
     val_path = dataset['val']
+    if "path" in dataset:
+        val_path = os.path.join(dataset["path"], val_path)
     with open(val_path, encoding='utf-8') as file:
         img_files += file.readlines()
     # load test data
@@ -86,8 +87,11 @@ def read_dataset(dataset):
     for line in img_files:
         label_file = line.replace("images", "labels").replace(".jpg", ".txt")
         with open(label_file, encoding='utf-8') as file:
-            labels += file.readlines()
-    labels = [int(label.split(" ")[0]) for label in labels]
+            _lines = file.readlines()
+            if len(_lines) >= 1:
+                txt = _lines[0].split(" ")
+                labels.append({"label": int(txt[0]), "coco_box": txt[1:5]})
+
     print(f"load {len(img_files)} data from {val_path},labels={len(labels)},names={label_names}")
     return label_names, labels, img_files
 
@@ -97,8 +101,8 @@ def stats_json(json_file, labels, img_files, label_names, model_names):
     stats_cache = {}
     for i in range(len(labels)):
         img_id = os.path.split(img_files[i])[1].replace(".jpg", "")
-        stat = {"label": labels[i], "predict": -1, "img_file": img_files[i], "image_id": img_id,
-                "bbox": [100, 100, 100, 100]}
+        stat = {"label": labels[i]['label'], "predict": -999, "img_file": img_files[i], "image_id": img_id,
+                "bbox": [100, 100, 100, 100], "coco_box": labels[i]['coco_box']}
         stats_cache[img_id] = stat
 
     with open(json_file, encoding="utf-8") as f:
@@ -133,11 +137,19 @@ def export_files(save_dir, top_diff, tag):
         xmin, ymin, xmax, ymax = int(bbox[0]), int(bbox[1]), int(bbox[0]) + int(bbox[2]), int(bbox[1]) + int(bbox[3])
         color = (255, 0, 0)
         bbox_img = read_img_file(stat["img_file"])
+        if bbox_img is None:
+            print("miss img :", stat["img_file"])
+            continue
         bbox_img = cv2.rectangle(bbox_img, (xmin, ymin), (xmax, ymax), color, 2)
         cv2.putText(bbox_img, "P:" + str(stat['predict_cls']), (xmin, ymin - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 2, color, 2)
+        size = (bbox_img.shape[1], bbox_img.shape[0])
+        bbox = decode_coco(size, stat['coco_box'])
+        xmin, ymin, xmax, ymax = int(bbox[0]), int(bbox[1]), int(bbox[0]) + int(bbox[2]), int(bbox[1]) + int(bbox[3])
+        green = (0, 255, 0)
+        bbox_img = cv2.rectangle(bbox_img, (xmin, ymin), (xmax, ymax), green, 2)
         cv2.putText(bbox_img, "G:" + str(stat['label_cls']), (xmin, ymax - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 2, color, 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 2, green, 2)
         save_img_file(os.path.join(output_folder, stat["image_id"] + ".jpg"), bbox_img)
 
 
@@ -221,8 +233,8 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
 
 if __name__ == '__main__':
     data = r'E:\medical\depth\efficientteacher\configs\sup\custom\datasets\polyp_size_v2.yaml'
-    save_dir = r'E:\medical\depth\efficientteacher\runs\val\exp60'
-    label_names, labels, img_files = read_dataset(data)
+    save_dir = r'E:\medical\depth\efficientteacher\runs\val\exp29'
+    dataset = utils.general.yaml_load(data)
+    label_names, labels, img_files = read_dataset(dataset)
     results = stats_json(os.path.join(save_dir, "best_predictions.json"),
                          labels, img_files, label_names, label_names)
-
