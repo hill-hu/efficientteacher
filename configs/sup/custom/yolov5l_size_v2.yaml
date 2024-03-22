@@ -42,13 +42,14 @@ Loss:
   anchor_t: 4.0
   cross_weight: 0.
   autobalance: True
-  label_smoothing: 0.1
+  label_smoothing: 0.
+  fl_gamma: 1.5
 
 Dataset:
   data_name: 'coco'
-  train: ../dataset/rhwu_v4/train_full.txt  # 118287 images
-  val: ../dataset/rhwu_v4/test.txt  # 5000 images
-  test: ../dataset/rhwu_v4/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
+  train: ../dataset/rhwu_v5/train_full.txt  # 118287 images
+  val: ../dataset/rhwu_v5/all.txt  # 5000 images
+  test: ../dataset/rhwu_v5/val.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794^
   nc: 10  # number of classes
   np: 0 #number of keypoints
   names: ['2', '3', '4', '5', '6', '7', '8', '10', '15', '17']
