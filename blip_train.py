@@ -35,8 +35,11 @@ def parse_opt():
     return opt
 
 
+from datasets import load_dataset
+import torch
+
+
 def main(opt):
-    from datasets import load_dataset
     processor = AutoProcessor.from_pretrained(r"blip-image-captioning-base")
     model = BlipForConditionalGeneration.from_pretrained(
         r"blip-image-captioning-base")
@@ -44,7 +47,6 @@ def main(opt):
     dataset = load_dataset("imagefolder", data_dir=os.path.join(opt.data, "train"), split="train")
     train_dataset = ImageCaptioningDataset(dataset, processor)
     train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=8)
-    import torch
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
 
