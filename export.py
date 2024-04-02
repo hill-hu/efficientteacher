@@ -60,7 +60,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+dll_path = os.path.join(ROOT, "tensorrt")
 
+os.environ['PATH'] =  dll_path + os.pathsep + str(ROOT) + os.pathsep + os.environ['PATH']
 #from models.backbone.experimental import attempt_load
 from models.head.yolov5_head import Detect
 # from models.head.yolox_kp_head import DetectYoloXKeypoints

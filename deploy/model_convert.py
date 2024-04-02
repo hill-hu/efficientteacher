@@ -177,7 +177,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
             export_onnx(model, im, file, 12, train, False, simplify)  # opset 12
             model.model[-1].anchor_grid = grid
         else:  # TensorRT >= 8
-            check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
+            check_version(trt.__version__, '8.0.0')  # require tensorrt>=8.0.0
             export_onnx(model, im, file, 13, train, False, simplify)  # opset 13
         onnx = file.with_suffix('.onnx')
 
@@ -215,7 +215,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
     except Exception as e:
-        LOGGER.info(f'\n{prefix} export failure: {e}')
+        LOGGER.exception(f'\n{prefix} export failure: {e}')
 
 
 def export_saved_model(model,
